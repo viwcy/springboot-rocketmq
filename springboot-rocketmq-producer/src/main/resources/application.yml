@@ -1,0 +1,22 @@
+server:
+  port: 18001
+  tomcat:
+    uri-encoding: UTF-8
+###producer
+#该应用是否启用生产者
+rocketmq:
+  producer:
+    isOnOff: on
+    #发送同一类消息的设置为同一个group，保证唯一,默认不需要设置，rocketmq会使用ip@pid(pid代表jvm名字)作为唯一标示
+    groupName: ${spring.application.name}
+    #mq的nameserver地址
+    namesrvAddr: 127.0.0.1:9876
+    #消息最大长度 默认1024*4(4M)
+    maxMessageSize: 4096
+    #发送消息超时时间,默认3000
+    sendMsgTimeout: 3000
+    #发送消息失败重试次数，默认2
+    retryTimesWhenSendFailed: 2
+spring:
+  application:
+    name: rocketmq-producer
