@@ -5,6 +5,7 @@ import org.apache.rocketmq.client.consumer.listener.ConsumeConcurrentlyContext;
 import org.apache.rocketmq.client.consumer.listener.ConsumeConcurrentlyStatus;
 import org.apache.rocketmq.client.consumer.listener.MessageListenerConcurrently;
 import org.apache.rocketmq.common.message.MessageExt;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
@@ -26,6 +27,9 @@ import java.util.List;
 @Slf4j
 public class RocketMQConsumeListenerProcessor implements MessageListenerConcurrently {
 
+    @Autowired
+    private TopicTagBeanFactory beanFactory;
+
     /**
      * 默认List<MessageExt>里只有一条消息，可以通过设置consumeMessageBatchMaxSize参数来批量接收消息<br/>
      * 不要抛异常，如果没有return CONSUME_SUCCESS ，consumer会重新消费该消息，直到return CONSUME_SUCCESS
@@ -42,22 +46,24 @@ public class RocketMQConsumeListenerProcessor implements MessageListenerConcurre
         log.info("RocketMQ接收到消息：{}", message);
 
         //TODO 判断该消息是否重复消费（RocketMQ不保证消息不重复，如果你的业务需要保证严格的不重复消息，需要你自己在业务端去重）
-        //TODO 获取该消息重试次数
-        int reconsume = messageExt.getReconsumeTimes();
+
         //消息已经重试了3次，如果不需要再次消费，则返回成功，做额外的补偿机制，自行扩展
+        int reconsume = messageExt.getReconsumeTimes();
         if (reconsume == 3) {
+            //、、消息存表，以后进行人工消费
             return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
         }
+
         //TODO 策略模式处理对应的业务逻辑
         try {
-            System.out.println("打印消息：" + message);
+            beanFactory.getInstance(messageExt.getTopic() + "-" + messageExt.getTags()).execute(new String(messageExt.getBody()));
             log.info("消息处理完毕...");
             //TODO 存储消息表，做幂等性处理
         } catch (Exception e) {
+            log.info("消息消费异常，原因：{}", e.getCause().toString());
             e.printStackTrace();
             return ConsumeConcurrentlyStatus.RECONSUME_LATER;
         }
-        // 如果没有return success ，consumer会重新消费该消息，直到return success
         return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
     }
 }

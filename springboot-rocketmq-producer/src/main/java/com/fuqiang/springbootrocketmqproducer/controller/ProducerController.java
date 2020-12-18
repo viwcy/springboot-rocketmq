@@ -29,9 +29,21 @@ public class ProducerController {
     @Autowired
     private RocketMQProducer rocketMQProducer;
 
-    @PostMapping("/send")
-    public String send(@RequestParam("message") String message) throws InterruptedException, RemotingException, MQClientException, MQBrokerException {
-        boolean send = rocketMQProducer.syncSend("test-topic", "test1", message);
+    /**
+     * 支付-积分
+     */
+    @PostMapping("/integral")
+    public String integral(@RequestParam("message") String message) throws InterruptedException, RemotingException, MQClientException, MQBrokerException {
+        boolean send = rocketMQProducer.syncSend("pay-topic", "integral", message);
+        return send ? "OK" : "FAIL";
+    }
+
+    /**
+     * 支付-活跃度
+     */
+    @PostMapping("/active")
+    public String active(@RequestParam("message") String message) throws InterruptedException, RemotingException, MQClientException, MQBrokerException {
+        boolean send = rocketMQProducer.syncSend("pay-topic", "active", message);
         return send ? "OK" : "FAIL";
     }
 }
