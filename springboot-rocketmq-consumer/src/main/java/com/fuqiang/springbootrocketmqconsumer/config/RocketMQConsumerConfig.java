@@ -1,5 +1,6 @@
 package com.fuqiang.springbootrocketmqconsumer.config;
 
+import com.fuqiang.springbootrocketmqconsumer.service.OrderlyConsumeListenerProcessor;
 import com.fuqiang.springbootrocketmqconsumer.service.RocketMQConsumeListenerProcessor;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
@@ -40,13 +41,16 @@ public class RocketMQConsumerConfig {
     @Autowired
     private RocketMQConsumeListenerProcessor rocketMQConsumeListenerProcessor;
 
+    @Autowired
+    private OrderlyConsumeListenerProcessor orderlyConsumeListenerProcessor;
+
     @Bean
     public DefaultMQPushConsumer getRocketMQConsumer() {
         DefaultMQPushConsumer consumer = new DefaultMQPushConsumer(this.getGroupName());
         consumer.setNamesrvAddr(this.getNamesrvAddr());
         consumer.setConsumeThreadMin(this.getConsumeThreadMin());
         consumer.setConsumeThreadMax(this.getConsumeThreadMax());
-        consumer.registerMessageListener(this.getRocketMQConsumeListenerProcessor());
+        consumer.registerMessageListener(orderlyConsumeListenerProcessor);
         //设置Consumer第一次启动是从队列头部开始消费还是队列尾部开始消费
         //如果非第一次启动，那么按照上次消费的位置继续消费
         consumer.setConsumeFromWhere(ConsumeFromWhere.CONSUME_FROM_LAST_OFFSET);

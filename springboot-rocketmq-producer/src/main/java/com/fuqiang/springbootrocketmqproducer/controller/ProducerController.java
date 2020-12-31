@@ -46,4 +46,26 @@ public class ProducerController {
         boolean send = rocketMQProducer.syncSend("pay-topic", "active", message);
         return send ? "OK" : "FAIL";
     }
+
+    /**
+     * 同步发送顺序消息
+     */
+    @PostMapping("/syncorderly")
+    public String syncorderly() throws InterruptedException, RemotingException, MQClientException, MQBrokerException {
+        for (int i = 0; i < 5; i++) {
+            rocketMQProducer.syncSendOrderly("sync-orderly-topic", "test", 0, "同步顺序消息" + i);
+        }
+        return "OK";
+    }
+
+    /**
+     * 异步发送顺序消息
+     */
+    @PostMapping("/asyncorderly")
+    public String asyncorderly() throws InterruptedException, RemotingException, MQClientException, MQBrokerException {
+        for (int i = 0; i < 5; i++) {
+            rocketMQProducer.asyncSendOrderly("async-orderly-topic", "test", 0, "异步顺序消息" + i);
+        }
+        return "OK";
+    }
 }

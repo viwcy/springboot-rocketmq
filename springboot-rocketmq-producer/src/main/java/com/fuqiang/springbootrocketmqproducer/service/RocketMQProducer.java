@@ -4,11 +4,9 @@ import com.alibaba.fastjson.JSON;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.rocketmq.client.exception.MQBrokerException;
 import org.apache.rocketmq.client.exception.MQClientException;
-import org.apache.rocketmq.client.producer.DefaultMQProducer;
-import org.apache.rocketmq.client.producer.SendCallback;
-import org.apache.rocketmq.client.producer.SendResult;
-import org.apache.rocketmq.client.producer.SendStatus;
+import org.apache.rocketmq.client.producer.*;
 import org.apache.rocketmq.common.message.Message;
+import org.apache.rocketmq.common.message.MessageQueue;
 import org.apache.rocketmq.remoting.exception.RemotingException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -190,4 +188,50 @@ public class RocketMQProducer {
         defaultMQProducer.send(var, sendCallback, timeout);
     }
 
+    /**
+     * TODO 同步发送顺序消息
+     */
+    public <T> void syncSendOrderly(String topic, String tag, Object queueId, T message) throws InterruptedException, RemotingException, MQClientException, MQBrokerException {
+
+        log.info("sync发送单条顺序消息，topic：{}，tag：{}，queueId：{}，message：{}", topic, tag, queueId, message);
+        Message var = new Message(topic, tag, message.toString().getBytes());
+        //arg：topic队列下标，默认每个topic分配4个队列(0~3)
+        defaultMQProducer.send(var, new MessageQueueSelector() {
+            //o：队列下标
+            @Override
+            public MessageQueue select(List<MessageQueue> list, Message message, Object o) {
+                Integer qID = (Integer) o;
+                MessageQueue queue = list.get(qID);
+                return queue;
+            }
+        }, queueId);
+    }
+
+    /**
+     * TODO 异步发送顺序消息
+     */
+    public <T> void asyncSendOrderly(String topic, String tag, Object queueId, T message) throws RemotingException, MQClientException, InterruptedException {
+        log.info("async发送单条顺序消息，topic：{}，tag：{}，queueId：{}，message：{}", topic, tag, queueId, message);
+        Message var = new Message(topic, tag, message.toString().getBytes());
+        //arg：topic队列下标，默认每个topic分配4个队列(0~3)
+        defaultMQProducer.send(var, new MessageQueueSelector() {
+            //o：队列下标
+            @Override
+            public MessageQueue select(List<MessageQueue> list, Message message, Object o) {
+                Integer qID = (Integer) o;
+                MessageQueue queue = list.get(qID);
+                return queue;
+            }
+        }, queueId, new SendCallback() {
+            @Override
+            public void onSuccess(SendResult sendResult) {
+                log.info("async异步回调成功，回调结果：{}", JSON.toJSONString(sendResult));
+            }
+
+            @Override
+            public void onException(Throwable throwable) {
+                log.info("async异步回调失败，原因：{}", throwable.getCause().toString());
+            }
+        });
+    }
 }

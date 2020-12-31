@@ -31,7 +31,6 @@ public class RocketMQProducerConfig {
     private Integer maxMessageSize;
     private Integer sendMsgTimeout;
     private Integer retryTimesWhenSendFailed;
-    private Integer retryTimesWhenSendAsyncFailed;
 
     @Bean
     public DefaultMQProducer getRocketMQProducer() {
@@ -42,9 +41,8 @@ public class RocketMQProducerConfig {
         //producer.setInstanceName(instanceName);
         producer.setMaxMessageSize(this.getMaxMessageSize());
         producer.setSendMsgTimeout(this.getSendMsgTimeout());
-        //如果发送消息失败，设置重试次数(同步和异步)，默认为2次
+        //如果发送消息失败，设置重试次数(同步，异步发送根本不会重试)，默认为2次
         producer.setRetryTimesWhenSendFailed(this.getRetryTimesWhenSendFailed());
-        producer.setRetryTimesWhenSendAsyncFailed(this.getRetryTimesWhenSendAsyncFailed());
 
         try {
             producer.start();
